@@ -3,8 +3,14 @@ version: 0.2
 phases:
   install:
     commands:
+      # Install Node.js 20 on Amazon Linux 2
+      - curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+      - yum install -y nodejs
+
+      # Move into frontend folder
       - cd frontend
       - npm install
+
   build:
     commands:
       - npm run build
