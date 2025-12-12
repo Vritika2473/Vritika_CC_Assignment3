@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AI Photo Search</title>
+    <link rel="icon" href="data:,">
+
+    <!-- SDK dependencies -->
+    <script src="sdk/lib/axios/dist/axios.standalone.js"></script>
+    <script src="sdk/lib/CryptoJS/rollups/crypto-js.js"></script>
+    <script src="sdk/lib/CryptoJS/rollups/sha256.js"></script>
+    <script src="sdk/lib/CryptoJS/components/hmac.js"></script>
+    <script src="sdk/lib/CryptoJS/components/enc-base64.js"></script>
+    <script src="sdk/lib/url-template/url-template.js"></script>
+    <script src="sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+    <script src="sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+    <script src="sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+    <script src="sdk/lib/apiGatewayCore/utils.js"></script>
+    <script src="sdk/apigClient.js"></script>
+
+    <style>
+        body { font-family: Arial, margin:40px, background:#f4f4f4; }
+        #results img {
+            width: 250px;
+            margin: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.2);
+        }
+        .nav a {
+            padding:10px 20px; background:#0073bb; color:white;
+            text-decoration:none; border-radius:6px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="nav">
+    <a href="upload.html">Upload Photos</a>
+</div>
+
+<h1>Search Photos</h1>
+
+<input type="text" id="searchText" placeholder="Search e.g. 'dog', 'cat'" size="40">
+<button onclick="doSearch()">Search</button>
+
+<h2>Results</h2>
+<div id="results"></div>
+
+<script>
+var apigClient = apigClientFactory.newClient({
+    apiKey: "1anI1JHNZtaFEwxoG8UEn7exdCvdsRT02NljyLuq"
+});
+
+function doSearch() {
+    let q = document.getElementById("searchText").value;
+
+    apigClient.searchGet({ q: q }, {}, {})
+    .then(function(response) {
+
+        console.log("RAW SEARCH RESPONSE:", response);
+
+        let backend = response.data;
+
+        // ALWAYS PARSE body from API Gateway
+        if (backend.body && typeof backend.body === "string") {
+            backend = JSON.parse(backend.body);
+        }
+
+        console.log("PARSED BACKEND:", backend);
+
+        if (!backend.results || !Array.isArray(backend.results)) {
+            alert("No results returned from backend.");
+            console.error("INVALID RESULTS FORMAT:", backend);
+            return;
+        }
+
+        let results = backend.results;
+        let div = document.getElementById("results");
+        div.innerHTML = "";
+
+        results.forEach(item => {
+
+            console.log("ITEM RESULT:", item);
+
+
+            let imgUrl = item.url
+                ? item.url
+                : `https://${item.bucket}.s3.amazonaws.com/${item.objectKey}`;
+
+            let img = document.createElement("img");
+            img.src = imgUrl;
+            div.appendChild(img);
+        });
+
+    })
+    .catch(function(error) {
+        console.log("Search error:", error);
+        alert("Search failed. Check console.");
+    });
+}
+</script>
+
+
+</body>
+</html>
+
